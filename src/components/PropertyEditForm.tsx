@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { adminAPI } from '@/lib/api';
+import { propertiesAPI } from '@/lib/api';
 import { Property, PropertyDto } from '@/types/agent';
 import { Upload, X, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -107,7 +107,7 @@ export const PropertyEditForm = ({ property, onSuccess, onCancel }: PropertyEdit
     setIsSubmitting(true);
 
     try {
-      await adminAPI.updateProperty(property.id, formData, newImages.length > 0 ? newImages : undefined);
+      await propertiesAPI.updateProperty(property.id, formData, newImages.length > 0 ? newImages : undefined);
       onSuccess();
     } catch (error: any) {
       const errorMessage = error.message || 'Failed to update property';

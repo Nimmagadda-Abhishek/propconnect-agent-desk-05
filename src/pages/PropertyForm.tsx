@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { propertiesAPI } from '@/lib/api';
-import { PropertyDto } from '@/types/agent';
+import { PropertyDto, PropertyImage } from '@/types/agent';
 import { ArrowLeft, Upload, X, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -54,6 +54,8 @@ export const PropertyForm = () => {
   });
   
   const [images, setImages] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<PropertyImage[]>([]);
+  const [imagesToRemove, setImagesToRemove] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(isEdit);
 
@@ -116,6 +118,7 @@ export const PropertyForm = () => {
             listingStatus: property.listingStatus || 'RECENT',
             agentId: property.agent?.id || 0,
           });
+          setExistingImages(property.propertyImages || []);
         } catch (error) {
           console.error('PropertyForm: Error loading property for edit:', error);
           toast({
@@ -133,7 +136,7 @@ export const PropertyForm = () => {
     }
   }, [isEdit, id, navigate, toast]);
 
-  const handleInputChange = (field: keyof PropertyDto, value: any) => {
+  const handleInputChange = (field: keyof PropertyDto, value: string | number | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -146,6 +149,11 @@ export const PropertyForm = () => {
 
   const removeImage = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (imageId: number) => {
+    setImagesToRemove(prev => [...prev, imageId]);
+    setExistingImages(prev => prev.filter(img => img.id !== imageId));
   };
 
   const handleAmenityChange = (amenity: string, checked: boolean) => {
@@ -167,7 +175,7 @@ export const PropertyForm = () => {
 
     try {
       if (isEdit && id) {
-        await propertiesAPI.updateProperty(Number(id), formData, images);
+        await propertiesAPI.updateProperty(Number(id), formData, images, imagesToRemove);
         toast({
           title: 'Success',
           description: 'Property updated successfully',
@@ -647,26 +655,57 @@ export const PropertyForm = () => {
                 />
               </div>
               
+              {/* Existing Images */}
+              {existingImages.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Existing Images</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {existingImages.map((image) => (
+                      <div key={image.id} className="relative">
+                        <img
+                          src={image.imageUrl}
+                          alt={`Property ${image.id}`}
+                          className="w-full h-24 object-cover rounded-lg"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                          onClick={() => removeExistingImage(image.id)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* New Images */}
               {images.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {images.map((image, index) => (
-                    <div key={index} className="relative">
-                      <img
-                        src={URL.createObjectURL(image)}
-                        alt={`Upload ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg"
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="destructive"
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
-                        onClick={() => removeImage(index)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">New Images</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {images.map((image, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={URL.createObjectURL(image)}
+                          alt={`Upload ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                          onClick={() => removeImage(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </CardContent>

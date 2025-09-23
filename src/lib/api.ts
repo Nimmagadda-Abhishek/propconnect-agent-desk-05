@@ -158,29 +158,39 @@ export const propertiesAPI = {
     }
   },
   
-  updateProperty: async (id: number, propertyData: PropertyDto, images?: File[]): Promise<{ message: string; propertyId: number }> => {
+  updateProperty: async (id: number, propertyData: PropertyDto, images?: File[], imagesToRemove?: number[]): Promise<{ message: string; propertyId: number }> => {
     try {
       const formData = new FormData();
-      
+
       // Add all PropertyDto fields to FormData
       Object.entries(propertyData).forEach(([key, value]) => {
         if (value !== null && value !== undefined && value !== '') {
           formData.append(key, value.toString());
         }
       });
-      
+
       // Add images if provided
       if (images && images.length > 0) {
         images.forEach((image) => {
-          formData.append('images', image);
+          formData.append('newImages', image);
         });
       }
-      
+
+      // Add images to remove if provided
+      if (imagesToRemove && imagesToRemove.length > 0) {
+        imagesToRemove.forEach((imageId) => {
+          formData.append('imagesToRemove', imageId.toString());
+        });
+      }
+
       const response = await fetch(`${API_BASE_URL}/agent/properties/${id}`, {
         method: 'PUT',
+        headers: {
+          'ngrok-skip-browser-warning': 'true'
+        },
         body: formData, // Don't set Content-Type header - browser will set it with boundary
       });
-      
+
       await handleApiError(response);
       return await response.json();
     } catch (error) {

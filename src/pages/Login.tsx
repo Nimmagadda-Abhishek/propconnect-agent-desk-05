@@ -80,12 +80,7 @@ export const Login = () => {
               Sign In
             </Button>
           </form>
-          
-          <div className="mt-6 p-4 bg-muted rounded-lg">
-            <p className="text-sm font-medium text-muted-foreground mb-2">Demo Credentials:</p>
-            <p className="text-sm">Username: <code className="bg-background px-1 rounded">john_agent</code></p>
-            <p className="text-sm">Password: <code className="bg-background px-1 rounded">password123</code></p>
-          </div>
+        
         </CardContent>
       </Card>
     </div>
