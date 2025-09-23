@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/old-path",
-      "destination": "/new-path"
+      "source": "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|placeholder.svg).*)",
+      "destination": "/index.html"
     }
   ]
 }
