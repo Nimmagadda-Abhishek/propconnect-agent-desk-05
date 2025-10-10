@@ -23,6 +23,7 @@ export const Login = () => {
     try {
       const response = await authAPI.login(credentials);
       login(response.agent);
+      console.log(response.agent.id);
       toast({
         title: 'Login Successful',
         description: `Welcome back, ${response.agent.fullName}!`,

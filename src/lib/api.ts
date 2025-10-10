@@ -1,6 +1,6 @@
 import { Agent, LoginRequest, LoginResponse, Property, PropertyDto, Inquiry, PropertyStats } from '@/types/agent';
 
-const API_BASE_URL = 'https://c707ef986dd3.ngrok-free.app/api';
+const API_BASE_URL = 'https://b39ad0aff255.ngrok-free.app/api';
 
 // API Helper function for handling errors
 const handleApiError = async (response: Response) => {
@@ -358,33 +358,53 @@ export const adminAPI = {
 export const inquiriesAPI = {
   getInquiries: async (agentId: number): Promise<Inquiry[]> => {
     try {
-      // First, get agent's properties to filter inquiries
-      const properties = await propertiesAPI.getMyProperties(agentId);
-      const propertyIds = properties.map(p => p.id);
-      
-      // If agent has no properties, return empty array
-      if (propertyIds.length === 0) {
-        return [];
-      }
-      
-      // Get all inquiries and filter by agent's properties
-      const response = await fetch(`${API_BASE_URL}/inquiries`, {
+      console.log('Making inquiries request to:', `${API_BASE_URL}/inquiries/agent/${agentId}`);
+
+      const response = await fetch(`${API_BASE_URL}/inquiries/agent/${agentId}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
         },
       });
-      
+
+      console.log('Inquiries response status:', response.status);
       await handleApiError(response);
-      const allInquiries: Inquiry[] = await response.json();
-      
-      // Filter inquiries that belong to agent's properties
-      return allInquiries.filter(inquiry => propertyIds.includes(inquiry.propertyId));
+      const result = await response.json();
+      console.log('Inquiries response:', result);
+      return result;
     } catch (error) {
+      console.error('Inquiries error:', error);
       if (error instanceof Error) {
         throw error;
       }
       throw new Error('Failed to fetch inquiries');
+    }
+  },
+
+  getInquiry: async (id: number): Promise<Inquiry> => {
+    try {
+      console.log('Making single inquiry request to:', `${API_BASE_URL}/inquiries/${id}`);
+
+      const response = await fetch(`${API_BASE_URL}/inquiries/${id}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+      });
+
+      console.log('Single inquiry response status:', response.status);
+      await handleApiError(response);
+      const result = await response.json();
+      console.log('Single inquiry response:', result);
+      return result;
+    } catch (error) {
+      console.error('Single inquiry error:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to fetch inquiry details');
     }
   }
 };

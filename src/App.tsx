@@ -12,6 +12,7 @@ import { AdminProperties } from "@/pages/AdminProperties";
 import { PropertyForm } from "@/pages/PropertyForm";
 import { PropertyDetails } from "@/pages/PropertyDetails";
 import { Inquiries } from "@/pages/Inquiries";
+import { InquiryDetails } from "@/pages/InquiryDetails";
 import { Profile } from "@/pages/Profile";
 import NotFound from "./pages/NotFound";
 
@@ -60,6 +61,11 @@ const App = () => (
             <Route path="/inquiries" element={
               <ProtectedRoute>
                 <Inquiries />
+              </ProtectedRoute>
+            } />
+            <Route path="/inquiries/:id" element={
+              <ProtectedRoute>
+                <InquiryDetails />
               </ProtectedRoute>
             } />
             <Route path="/profile" element={
