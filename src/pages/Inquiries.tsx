@@ -137,9 +137,9 @@ export const Inquiries = () => {
                       <TableCell className="font-medium">
                         {inquiry.propertyTitle}
                       </TableCell>
-                      <TableCell>{inquiry.userName}</TableCell>
+                      <TableCell>{inquiry.fullName}</TableCell>
                       <TableCell>{inquiry.email}</TableCell>
-                      <TableCell>{inquiry.phone}</TableCell>
+                      <TableCell>{inquiry.phoneNumber}</TableCell>
                       <TableCell>{inquiry.message}</TableCell>
                       <TableCell>
                         <Badge variant={inquiry.status === 'NEW' ? 'default' : 'secondary'}>

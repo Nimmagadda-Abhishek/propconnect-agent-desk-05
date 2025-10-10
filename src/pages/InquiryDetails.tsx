@@ -152,7 +152,7 @@ export const InquiryDetails = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground">Name</label>
-                  <p className="text-foreground">{inquiry.userName}</p>
+                  <p className="text-foreground">{inquiry.fullName}</p>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground flex items-center">
@@ -166,7 +166,7 @@ export const InquiryDetails = () => {
                     <Phone className="h-4 w-4 mr-1" />
                     Phone
                   </label>
-                  <p className="text-foreground">{inquiry.phone}</p>
+                  <p className="text-foreground">{inquiry.phoneNumber}</p>
                 </div>
               </div>
             </div>
@@ -217,6 +217,14 @@ export const InquiryDetails = () => {
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-muted-foreground">Area</label>
                         <p className="text-foreground">{property.area} sq ft</p>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">Contact Phone</label>
+                        <p className="text-foreground">{property.contactPhone}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">Contact Email</label>
+                        <p className="text-foreground">{property.contactEmail || 'N/A'}</p>
                       </div>
                     </div>
                   </>

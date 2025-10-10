@@ -116,11 +116,15 @@ export interface Inquiry {
   id: number;
   propertyId: number;
   propertyTitle: string;
-  userName: string;
+  fullName: string;
   email: string;
-  phone: string;
-  message: string;
-  type: string;
+  phoneNumber: string;
+  message?: string;
+  inquiryType: string;
   status: string;
+  propertyCity: string;
+  userId?: number;
+  userName?: string;
   createdAt: string;
+  updatedAt: string;
 }
