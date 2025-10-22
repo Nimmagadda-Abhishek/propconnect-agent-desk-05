@@ -135,12 +135,60 @@ export const PropertyDetails = () => {
           </div>
           
           <div className="flex space-x-2">
-            <Button 
+            <Button
               onClick={() => navigate(`/properties/${property.id}/edit`)}
               className="flex items-center space-x-2"
             >
               <Edit className="h-4 w-4" />
               <span>Edit Property</span>
+            </Button>
+
+            <Button
+              onClick={async () => {
+                try {
+                  await propertiesAPI.updatePropertyStatus(property.id, 'ACTIVE');
+                  setProperty({ ...property, status: 'ACTIVE' });
+                  toast({
+                    title: 'Success',
+                    description: 'Property status updated to Active',
+                  });
+                } catch (error) {
+                  toast({
+                    title: 'Error',
+                    description: 'Failed to update property status',
+                    variant: 'destructive',
+                  });
+                }
+              }}
+              variant="outline"
+              className="flex items-center space-x-2"
+              disabled={property.status === 'ACTIVE'}
+            >
+              <span>Mark as Active</span>
+            </Button>
+
+            <Button
+              onClick={async () => {
+                try {
+                  await propertiesAPI.updatePropertyStatus(property.id, 'SOLD');
+                  setProperty({ ...property, status: 'SOLD' });
+                  toast({
+                    title: 'Success',
+                    description: 'Property status updated to Sold',
+                  });
+                } catch (error) {
+                  toast({
+                    title: 'Error',
+                    description: 'Failed to update property status',
+                    variant: 'destructive',
+                  });
+                }
+              }}
+              variant="outline"
+              className="flex items-center space-x-2"
+              disabled={property.status === 'SOLD'}
+            >
+              <span>Mark as Sold</span>
             </Button>
           </div>
         </div>

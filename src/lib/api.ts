@@ -199,6 +199,31 @@ export const propertiesAPI = {
       }
       throw new Error('Failed to update property');
     }
+  },
+
+  updatePropertyStatus: async (id: number, status: string): Promise<{ message: string }> => {
+    try {
+      console.log('Making property status update request to:', `${API_BASE_URL}/agent/properties/${id}/status?status=${status}`);
+
+      const response = await fetch(`${API_BASE_URL}/agent/properties/${id}/status?status=${status}`, {
+        method: 'PUT',
+        headers: {
+          'ngrok-skip-browser-warning': 'true'
+        },
+      });
+
+      console.log('Property status update response status:', response.status);
+      await handleApiError(response);
+      const result = await response.json();
+      console.log('Property status update response:', result);
+      return result;
+    } catch (error) {
+      console.error('Property status update error:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to update property status');
+    }
   }
 };
 
