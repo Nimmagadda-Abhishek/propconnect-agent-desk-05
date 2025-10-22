@@ -51,6 +51,14 @@ export const PropertyForm = () => {
     instagramProfile: '',
     listingStatus: 'RECENT',
     agentId: 0,
+    reraStatus: false,
+    hmda: false,
+    grampanchayat: false,
+    registered: false,
+    registrationNo: '',
+    website: '',
+    latitude: undefined,
+    longitude: undefined,
   });
   
   const [images, setImages] = useState<File[]>([]);
@@ -117,6 +125,14 @@ export const PropertyForm = () => {
             instagramProfile: property.instagramProfile || '',
             listingStatus: property.listingStatus || 'RECENT',
             agentId: property.agent?.id || 0,
+            reraStatus: property.reraStatus || false,
+            hmda: property.hmda || false,
+            grampanchayat: property.grampanchayat || false,
+            registered: property.registered || false,
+            registrationNo: property.registrationNo || '',
+            website: property.website || '',
+            latitude: property.latitude,
+            longitude: property.longitude,
           });
           setExistingImages(property.propertyImages || []);
         } catch (error) {
@@ -341,7 +357,7 @@ export const PropertyForm = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="city">City *</Label>
                   <Input
@@ -352,7 +368,7 @@ export const PropertyForm = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="state">State *</Label>
                   <Input
@@ -363,7 +379,7 @@ export const PropertyForm = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="pincode">Pincode *</Label>
                   <Input
@@ -373,6 +389,73 @@ export const PropertyForm = () => {
                     placeholder="e.g., 500034"
                     required
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="latitude">Latitude</Label>
+                  <Input
+                    id="latitude"
+                    type="number"
+                    step="any"
+                    value={formData.latitude || ''}
+                    onChange={(e) => handleInputChange('latitude', e.target.value ? Number(e.target.value) : undefined)}
+                    placeholder="e.g., 17.3850"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="longitude">Longitude</Label>
+                  <Input
+                    id="longitude"
+                    type="number"
+                    step="any"
+                    value={formData.longitude || ''}
+                    onChange={(e) => handleInputChange('longitude', e.target.value ? Number(e.target.value) : undefined)}
+                    placeholder="e.g., 78.4867"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>&nbsp;</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                          (position) => {
+                            setFormData(prev => ({
+                              ...prev,
+                              latitude: position.coords.latitude,
+                              longitude: position.coords.longitude,
+                            }));
+                            toast({
+                              title: 'Location fetched',
+                              description: 'Current location has been set.',
+                            });
+                          },
+                          (error) => {
+                            console.error('Error getting location:', error);
+                            toast({
+                              title: 'Location error',
+                              description: 'Unable to fetch location. Please check permissions.',
+                              variant: 'destructive',
+                            });
+                          }
+                        );
+                      } else {
+                        toast({
+                          title: 'Geolocation not supported',
+                          description: 'Your browser does not support geolocation.',
+                          variant: 'destructive',
+                        });
+                      }
+                    }}
+                  >
+                    Fetch Location
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -563,7 +646,7 @@ export const PropertyForm = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="contactPhone">Contact Phone *</Label>
                   <Input
@@ -573,7 +656,7 @@ export const PropertyForm = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="contactEmail">Contact Email</Label>
                   <Input
@@ -583,11 +666,11 @@ export const PropertyForm = () => {
                     onChange={(e) => handleInputChange('contactEmail', e.target.value)}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="listingStatus">Listing Status</Label>
-                  <Select 
-                    value={formData.listingStatus} 
+                  <Select
+                    value={formData.listingStatus}
                     onValueChange={(value) => handleInputChange('listingStatus', value)}
                   >
                     <SelectTrigger>
@@ -601,7 +684,7 @@ export const PropertyForm = () => {
                   </Select>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="youtubeVideoUrl">YouTube Video URL</Label>
@@ -612,7 +695,7 @@ export const PropertyForm = () => {
                     placeholder="https://youtube.com/watch?v=..."
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="instagramProfile">Instagram Profile</Label>
                   <Input
@@ -620,6 +703,75 @@ export const PropertyForm = () => {
                     value={formData.instagramProfile}
                     onChange={(e) => handleInputChange('instagramProfile', e.target.value)}
                     placeholder="https://instagram.com/profile"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Legal Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Legal Information</CardTitle>
+              <CardDescription>Legal compliance and registration details</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="reraStatus"
+                    checked={formData.reraStatus}
+                    onCheckedChange={(checked) => handleInputChange('reraStatus', checked)}
+                  />
+                  <Label htmlFor="reraStatus">RERA Approved</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="hmda"
+                    checked={formData.hmda}
+                    onCheckedChange={(checked) => handleInputChange('hmda', checked)}
+                  />
+                  <Label htmlFor="hmda">HMDA Approved</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="grampanchayat"
+                    checked={formData.grampanchayat}
+                    onCheckedChange={(checked) => handleInputChange('grampanchayat', checked)}
+                  />
+                  <Label htmlFor="grampanchayat">Grampanchayat Approved</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="registered"
+                    checked={formData.registered}
+                    onCheckedChange={(checked) => handleInputChange('registered', checked)}
+                  />
+                  <Label htmlFor="registered">Registered</Label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="registrationNo">Registration Number</Label>
+                  <Input
+                    id="registrationNo"
+                    value={formData.registrationNo}
+                    onChange={(e) => handleInputChange('registrationNo', e.target.value)}
+                    placeholder="Enter registration number"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="website">Website</Label>
+                  <Input
+                    id="website"
+                    value={formData.website}
+                    onChange={(e) => handleInputChange('website', e.target.value)}
+                    placeholder="https://example.com"
                   />
                 </div>
               </div>

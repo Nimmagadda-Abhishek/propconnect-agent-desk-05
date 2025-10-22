@@ -78,6 +78,14 @@ export interface Property {
   updatedAt: string;
   viewCount: number;
   isVerified: boolean;
+  reraStatus: boolean;
+  hmda: boolean;
+  grampanchayat: boolean;
+  registered: boolean;
+  registrationNo?: string;
+  website?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface PropertyDto {
@@ -110,6 +118,14 @@ export interface PropertyDto {
   instagramProfile?: string;
   listingStatus: 'PREMIUM' | 'FEATURED' | 'RECENT';
   agentId: number;
+  reraStatus: boolean;
+  hmda: boolean;
+  grampanchayat: boolean;
+  registered: boolean;
+  registrationNo?: string;
+  website?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface Inquiry {

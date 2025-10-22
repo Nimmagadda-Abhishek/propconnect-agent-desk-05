@@ -1,9 +1,9 @@
-# TODO: Modify InquiryDetails to use getInquiries API and show property images
+# Add Latitude and Longitude to PropertyForm
 
 ## Tasks
-- [x] Modify fetchData in InquiryDetails.tsx to fetch all inquiries using inquiriesAPI.getInquiries(agent.id)
-- [x] Filter the inquiries array to find the inquiry with id === parseInt(id)
-- [x] If inquiry found, setInquiry and fetch property details using propertyId
-- [x] If inquiry not found, set error message
-- [x] Add display of property images in the Property Details section
-- [ ] Test the changes to ensure individual inquiry displays correctly with property details and images
+- [x] Update PropertyDto and Property interfaces in src/types/agent.ts to include latitude and longitude as optional numbers
+- [ ] Update PropertyForm.tsx to add latitude and longitude to formData state
+- [ ] Add latitude and longitude input fields in Location Details card
+- [ ] Add "Fetch Location" button with geolocation functionality
+- [ ] Update handleInputChange to handle number inputs for lat/long
+- [ ] Test geolocation and form submission

@@ -50,6 +50,14 @@ export const PropertyEditForm = ({ property, onSuccess, onCancel }: PropertyEdit
     instagramProfile: property.instagramProfile || '',
     listingStatus: property.listingStatus,
     agentId: property.agent.id,
+    reraStatus: property.reraStatus,
+    hmda: property.hmda,
+    grampanchayat: property.grampanchayat,
+    registered: property.registered,
+    registrationNo: property.registrationNo || '',
+    website: property.website || '',
+    latitude: property.latitude,
+    longitude: property.longitude,
   });
   
   const [newImages, setNewImages] = useState<File[]>([]);
@@ -61,7 +69,7 @@ export const PropertyEditForm = ({ property, onSuccess, onCancel }: PropertyEdit
     'jogging_track', 'tennis_court', 'basketball_court', 'meditation_center'
   ];
 
-  const handleInputChange = (field: keyof PropertyDto, value: any) => {
+  const handleInputChange = (field: keyof PropertyDto, value: string | number | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -109,8 +117,8 @@ export const PropertyEditForm = ({ property, onSuccess, onCancel }: PropertyEdit
     try {
       await propertiesAPI.updateProperty(property.id, formData, newImages.length > 0 ? newImages : undefined);
       onSuccess();
-    } catch (error: any) {
-      const errorMessage = error.message || 'Failed to update property';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update property';
       toast({
         title: 'Error',
         description: errorMessage,
@@ -510,6 +518,75 @@ export const PropertyEditForm = ({ property, onSuccess, onCancel }: PropertyEdit
                 <SelectItem value="RECENT">Recent</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Legal Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Legal Information</CardTitle>
+          <CardDescription>Legal compliance and registration details</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="reraStatus"
+                checked={formData.reraStatus}
+                onCheckedChange={(checked) => handleInputChange('reraStatus', !!checked)}
+              />
+              <Label htmlFor="reraStatus">RERA Approved</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="hmda"
+                checked={formData.hmda}
+                onCheckedChange={(checked) => handleInputChange('hmda', !!checked)}
+              />
+              <Label htmlFor="hmda">HMDA Approved</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="grampanchayat"
+                checked={formData.grampanchayat}
+                onCheckedChange={(checked) => handleInputChange('grampanchayat', !!checked)}
+              />
+              <Label htmlFor="grampanchayat">Grampanchayat Approved</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="registered"
+                checked={formData.registered}
+                onCheckedChange={(checked) => handleInputChange('registered', !!checked)}
+              />
+              <Label htmlFor="registered">Registered</Label>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="registrationNo">Registration Number</Label>
+              <Input
+                id="registrationNo"
+                value={formData.registrationNo}
+                onChange={(e) => handleInputChange('registrationNo', e.target.value)}
+                placeholder="Enter registration number"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="website">Website</Label>
+              <Input
+                id="website"
+                value={formData.website}
+                onChange={(e) => handleInputChange('website', e.target.value)}
+                placeholder="https://example.com"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>

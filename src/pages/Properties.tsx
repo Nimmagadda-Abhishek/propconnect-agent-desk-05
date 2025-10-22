@@ -229,9 +229,14 @@ export const Properties = () => {
                       <h3 className="font-semibold text-lg line-clamp-2">
                         {property.propertyTitle}
                       </h3>
-                      <div className="flex items-center text-muted-foreground text-sm mt-1">
+                    <div className="flex items-center text-muted-foreground text-sm mt-1">
                         <MapPin className="h-4 w-4 mr-1" />
-                        <span className="line-clamp-1">{property.locality}, {property.city}</span>
+                        <span className="line-clamp-1">
+                          {property.locality}, {property.city}
+                          {property.latitude && property.longitude && (
+                            <span> ({property.latitude.toFixed(4)}, {property.longitude.toFixed(4)})</span>
+                          )}
+                        </span>
                       </div>
                     </div>
 

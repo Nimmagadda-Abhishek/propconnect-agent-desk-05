@@ -116,7 +116,7 @@ export const PropertyDetails = () => {
   }
 
   return (
-    <Layout>
+    <Layout>{/*  */}
       <div className="space-y-6">
         {/* Header */}
         <div className="flex justify-between items-start">
@@ -242,6 +242,49 @@ export const PropertyDetails = () => {
                   </div>
                 ) : (
                   <p className="text-muted-foreground">No amenities listed</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Legal Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Legal Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-3 h-3 rounded-full ${property.reraStatus ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="text-sm">RERA Approved</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-3 h-3 rounded-full ${property.hmda ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="text-sm">HMDA Approved</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-3 h-3 rounded-full ${property.grampanchayat ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="text-sm">Grampanchayat Approved</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-3 h-3 rounded-full ${property.registered ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="text-sm">Registered</span>
+                  </div>
+                </div>
+
+                {property.registrationNo && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Registration Number</p>
+                    <p className="font-medium">{property.registrationNo}</p>
+                  </div>
+                )}
+
+                {property.website && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Website</p>
+                    <a href={property.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      {property.website}
+                    </a>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -418,8 +461,16 @@ export const PropertyDetails = () => {
                   <p className="text-sm text-muted-foreground">Pincode</p>
                   <p className="font-medium">{property.pincode}</p>
                 </div>
+                {property.latitude && property.longitude && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Coordinates</p>
+                    <p className="font-medium">{property.latitude.toFixed(4)}, {property.longitude.toFixed(4)}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
+
+
           </div>
         </div>
       </div>
