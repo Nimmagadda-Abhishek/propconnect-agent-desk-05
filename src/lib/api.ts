@@ -1,6 +1,6 @@
 import { Agent, LoginRequest, LoginResponse, Property, PropertyDto, Inquiry, PropertyStats } from '@/types/agent';
 
-const API_BASE_URL = 'https://f8456ad84ecf.ngrok-free.app/api';
+const API_BASE_URL = 'https://5d68354c8aee.ngrok-free.app/api';
 
 // API Helper function for handling errors
 const handleApiError = async (response: Response) => {
