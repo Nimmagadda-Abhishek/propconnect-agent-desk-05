@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { propertiesAPI } from '@/lib/api';
@@ -29,6 +30,7 @@ export const PropertyForm = () => {
     propertyDescription: '',
     fullAddress: '',
     locality: '',
+    landmark: '',
     city: '',
     state: '',
     pincode: '',
@@ -66,12 +68,53 @@ export const PropertyForm = () => {
   const [imagesToRemove, setImagesToRemove] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(isEdit);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const amenitiesList = [
     'swimming_pool', 'gym', 'garden', 'security', 'lift', 'parking',
     'power_backup', 'water_supply', 'wifi', 'clubhouse', 'playground',
     'jogging_track', 'tennis_court', 'basketball_court', 'meditation_center'
   ];
+
+  // Draft functionality
+  const getDraftKey = useCallback(() => {
+    if (!agent) return null;
+    return `property-draft-${agent.id}`;
+  }, [agent]);
+
+  const saveDraft = useCallback((data: PropertyDto) => {
+    const key = getDraftKey();
+    if (!key || isEdit) return; // Only save drafts for new properties
+
+    try {
+      // Exclude images from draft (can't store File objects in localStorage)
+      const draftData = { ...data, savedAt: new Date().toISOString() };
+      localStorage.setItem(key, JSON.stringify(draftData));
+    } catch (error) {
+      console.error('Failed to save draft:', error);
+    }
+  }, [getDraftKey, isEdit]);
+
+  const loadDraft = useCallback(() => {
+    const key = getDraftKey();
+    if (!key || isEdit) return null;
+
+    try {
+      const draft = localStorage.getItem(key);
+      return draft ? JSON.parse(draft) : null;
+    } catch (error) {
+      console.error('Failed to load draft:', error);
+      return null;
+    }
+  }, [getDraftKey, isEdit]);
+
+  const clearDraft = useCallback(() => {
+    const key = getDraftKey();
+    if (key) {
+      localStorage.removeItem(key);
+    }
+  }, [getDraftKey]);
 
   useEffect(() => {
     if (agent) {
@@ -88,6 +131,50 @@ export const PropertyForm = () => {
     }
   }, [agent]);
 
+  // Load draft on mount for new properties
+  useEffect(() => {
+    if (!isEdit && agent) {
+      const draft = loadDraft();
+      if (draft) {
+        setFormData(prev => ({
+          ...prev,
+          ...draft,
+          agentId: agent.id, // Ensure agentId is set correctly
+          contactName: agent.fullName,
+          contactPhone: agent.phoneNumber,
+          contactEmail: agent.email,
+        }));
+        toast({
+          title: 'Draft loaded',
+          description: 'Your previous draft has been restored.',
+        });
+      }
+    }
+  }, [isEdit, agent, loadDraft, toast]);
+
+  // Auto-save draft on form changes (debounced)
+  useEffect(() => {
+    if (!isEdit && agent) {
+      const timeoutId = setTimeout(() => {
+        saveDraft(formData);
+      }, 1000); // Save after 1 second of inactivity
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formData, isEdit, agent, saveDraft]);
+
+  // Save draft before page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (!isEdit && agent) {
+        saveDraft(formData);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [formData, isEdit, agent, saveDraft]);
+
   useEffect(() => {
     if (isEdit && id) {
       const fetchProperty = async () => {
@@ -103,6 +190,7 @@ export const PropertyForm = () => {
             propertyDescription: property.propertyDescription || '',
             fullAddress: property.fullAddress || '',
             locality: property.locality || '',
+            landmark: property.landmark || '',
             city: property.city || '',
             state: property.state || '',
             pincode: property.pincode || '',
@@ -163,6 +251,28 @@ export const PropertyForm = () => {
     }
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+
+    if (imageFiles.length > 0) {
+      setImages(prev => [...prev, ...imageFiles]);
+    }
+  };
+
   const removeImage = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index));
   };
@@ -185,8 +295,27 @@ export const PropertyForm = () => {
     handleInputChange('amenities', updatedAmenities.join(','));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const generatePropertySummary = () => {
+    const summary = [
+      `Title: ${formData.propertyTitle}`,
+      `Price: ₹${formData.price.toLocaleString()}`,
+      `Type: ${formData.propertyType} (${formData.listingType})`,
+      `Location: ${formData.locality}, ${formData.city}, ${formData.state}`,
+      `Bedrooms: ${formData.bedrooms}, Bathrooms: ${formData.bathrooms}`,
+      `Area: ${formData.area}`,
+      `Contact: ${formData.contactName} (${formData.contactPhone})`,
+      `Images: ${existingImages.length + images.length} uploaded`,
+    ].filter(line => !line.includes('undefined') && !line.includes('0 uploaded')).join('\n');
+    return summary;
+  };
+
+  const handlePublishClick = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmPublish = async () => {
+    setShowConfirmDialog(false);
     setIsLoading(true);
 
     try {
@@ -198,6 +327,7 @@ export const PropertyForm = () => {
         });
       } else {
         await propertiesAPI.createProperty(formData, images);
+        clearDraft(); // Clear draft after successful creation
         toast({
           title: 'Success',
           description: 'Property created successfully',
@@ -213,6 +343,32 @@ export const PropertyForm = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSaveAsDraft = async () => {
+    if (isEdit) return; // Only allow saving drafts for new properties
+
+    setIsLoading(true);
+    try {
+      await propertiesAPI.saveAsDraft(formData, images);
+      toast({
+        title: 'Success',
+        description: 'Property saved as draft successfully',
+      });
+      // Don't navigate away, stay on the form
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save property as draft',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancelPublish = () => {
+    setShowConfirmDialog(false);
   };
 
   if (isInitialLoading) {
@@ -247,7 +403,7 @@ export const PropertyForm = () => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handlePublishClick} className="space-y-6">
           {/* Basic Information */}
           <Card>
             <CardHeader>
@@ -271,9 +427,10 @@ export const PropertyForm = () => {
                   <Label htmlFor="price">Price (₹) *</Label>
                   <Input
                     id="price"
-                    type="number"
+                    type="text"
+                    pattern="^\d*\.?\d*$"
                     value={formData.price}
-                    onChange={(e) => handleInputChange('price', Number(e.target.value))}
+                    onChange={(e) => handleInputChange('price', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
                     placeholder="e.g., 5500000"
                     required
                   />
@@ -346,7 +503,7 @@ export const PropertyForm = () => {
                 />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="locality">Locality *</Label>
                   <Input
@@ -355,6 +512,16 @@ export const PropertyForm = () => {
                     onChange={(e) => handleInputChange('locality', e.target.value)}
                     placeholder="e.g., Banjara Hills"
                     required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="landmark">Landmark</Label>
+                  <Input
+                    id="landmark"
+                    value={formData.landmark}
+                    onChange={(e) => handleInputChange('landmark', e.target.value)}
+                    placeholder="e.g., Near Hitech City"
                   />
                 </div>
 
@@ -473,43 +640,43 @@ export const PropertyForm = () => {
                   <Label htmlFor="bedrooms">Bedrooms</Label>
                   <Input
                     id="bedrooms"
-                    type="number"
-                    min="0"
-                    value={formData.bedrooms}
-                    onChange={(e) => handleInputChange('bedrooms', Number(e.target.value))}
+                    type="text"
+                    pattern="^\d*$"
+                    value={formData.bedrooms === 0 ? '' : formData.bedrooms.toString()}
+                    onChange={(e) => handleInputChange('bedrooms', e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="bathrooms">Bathrooms</Label>
                   <Input
                     id="bathrooms"
-                    type="number"
-                    min="0"
-                    value={formData.bathrooms}
-                    onChange={(e) => handleInputChange('bathrooms', Number(e.target.value))}
+                    type="text"
+                    pattern="^\d*$"
+                    value={formData.bathrooms === 0 ? '' : formData.bathrooms.toString()}
+                    onChange={(e) => handleInputChange('bathrooms', e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="floors">Floor</Label>
                   <Input
                     id="floors"
-                    type="number"
-                    min="0"
-                    value={formData.floors}
-                    onChange={(e) => handleInputChange('floors', Number(e.target.value))}
+                    type="text"
+                    pattern="^\d*$"
+                    value={formData.floors === 0 ? '' : formData.floors.toString()}
+                    onChange={(e) => handleInputChange('floors', e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="totalFloors">Total Floors</Label>
                   <Input
                     id="totalFloors"
-                    type="number"
-                    min="0"
-                    value={formData.totalFloors}
-                    onChange={(e) => handleInputChange('totalFloors', Number(e.target.value))}
+                    type="text"
+                    pattern="^\d*$"
+                    value={formData.totalFloors === 0 ? '' : formData.totalFloors.toString()}
+                    onChange={(e) => handleInputChange('totalFloors', e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                   />
                 </div>
               </div>
@@ -551,10 +718,10 @@ export const PropertyForm = () => {
                   <Label htmlFor="propertyAge">Property Age (Years)</Label>
                   <Input
                     id="propertyAge"
-                    type="number"
-                    min="0"
+                    type="text"
+                    pattern="^\d*$"
                     value={formData.propertyAge}
-                    onChange={(e) => handleInputChange('propertyAge', Number(e.target.value))}
+                    onChange={(e) => handleInputChange('propertyAge', e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                   />
                 </div>
                 
@@ -618,10 +785,10 @@ export const PropertyForm = () => {
                     <Label htmlFor="parkingSpots">Number of Parking Spots</Label>
                     <Input
                       id="parkingSpots"
-                      type="number"
-                      min="0"
+                      type="text"
+                      pattern="^\d*$"
                       value={formData.parkingSpots}
-                      onChange={(e) => handleInputChange('parkingSpots', Number(e.target.value))}
+                      onChange={(e) => handleInputChange('parkingSpots', e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                     />
                   </div>
                 )}
@@ -787,7 +954,14 @@ export const PropertyForm = () => {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="images" className="cursor-pointer">
-                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors">
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                      isDragging ? 'border-primary bg-primary/5' : 'border-border hover:border-primary'
+                    }`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
                     <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">
                       Click to upload images or drag and drop
@@ -873,12 +1047,49 @@ export const PropertyForm = () => {
             >
               Cancel
             </Button>
+            {!isEdit && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleSaveAsDraft}
+                disabled={isLoading}
+                className="flex items-center space-x-2"
+              >
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                <span>Save as Draft</span>
+              </Button>
+            )}
             <Button type="submit" disabled={isLoading} className="flex items-center space-x-2">
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-              <span>{isEdit ? 'Update Property' : 'Create Property'}</span>
+              <span>{isEdit ? 'Update Property' : 'Publish Listing'}</span>
             </Button>
           </div>
         </form>
+
+        {/* Confirmation Dialog */}
+        <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Property {isEdit ? 'Update' : 'Creation'}</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to {isEdit ? 'update' : 'publish'} this property listing?
+                <br />
+                <br />
+                <strong>Property Summary:</strong>
+                <br />
+                <pre className="mt-2 p-2 bg-muted rounded text-sm whitespace-pre-wrap">
+                  {generatePropertySummary()}
+                </pre>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleCancelPublish}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmPublish}>
+                {isEdit ? 'Update Property' : 'Publish Listing'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );

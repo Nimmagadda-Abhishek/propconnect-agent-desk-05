@@ -1,16 +1,20 @@
-import { Agent, LoginRequest, LoginResponse, Property, PropertyDto, Inquiry, PropertyStats } from '@/types/agent';
+import { Agent, LoginRequest, LoginResponse, Property, PropertyDto, Inquiry, PropertyStats, DashboardStats, PropertiesChartData, PropertiesSummary, PerformanceData } from '@/types/agent';
 
+<<<<<<< Updated upstream
 const API_BASE_URL = 'https://5d68354c8aee.ngrok-free.app/api';
+=======
+const API_BASE_URL = 'https://86a3fb0b3ca7.ngrok-free.app/api';
+>>>>>>> Stashed changes
 
 // API Helper function for handling errors
 const handleApiError = async (response: Response) => {
   console.log('Full response object:', response);
   console.log('Response URL:', response.url);
   console.log('Response type:', response.type);
-  
+
   if (!response.ok) {
     let errorMessage = `Request failed with status ${response.status}`;
-    
+
     try {
       const errorData = await response.json();
       console.log('Error response data:', errorData);
@@ -27,14 +31,14 @@ const handleApiError = async (response: Response) => {
         errorMessage = response.statusText || errorMessage;
       }
     }
-    
+
     // Handle authentication errors
     if (response.status === 401 || response.status === 403) {
       // Clear localStorage and redirect to login
       localStorage.removeItem('propconnect_agent');
       window.location.href = '/login';
     }
-    
+
     throw new Error(errorMessage);
   }
   return response;
@@ -46,7 +50,7 @@ export const authAPI = {
     try {
       console.log('Making login request to:', `${API_BASE_URL}/auth/agent/login`);
       console.log('Request payload:', credentials);
-      
+
       const response = await fetch(`${API_BASE_URL}/auth/agent/login`, {
         method: 'POST',
         headers: {
@@ -55,10 +59,10 @@ export const authAPI = {
         },
         body: JSON.stringify(credentials),
       });
-      
+
       console.log('Response status:', response.status);
       console.log('Response headers:', response.headers);
-      
+
       await handleApiError(response);
       const result = await response.json();
       console.log('Login response:', result);
@@ -78,7 +82,7 @@ export const propertiesAPI = {
   getMyProperties: async (agentId: number): Promise<Property[]> => {
     try {
       console.log('Making properties request to:', `${API_BASE_URL}/agent/properties/my-properties/${agentId}`);
-      
+
       const response = await fetch(`${API_BASE_URL}/agent/properties/my-properties/${agentId}`, {
         method: 'GET',
         headers: {
@@ -86,7 +90,7 @@ export const propertiesAPI = {
           'ngrok-skip-browser-warning': 'true'
         },
       });
-      
+
       console.log('Properties response status:', response.status);
       await handleApiError(response);
       const result = await response.json();
@@ -100,11 +104,11 @@ export const propertiesAPI = {
       throw new Error('Failed to fetch properties');
     }
   },
-  
+
   getProperty: async (id: number): Promise<Property> => {
     try {
       console.log('Making single property request to:', `${API_BASE_URL}/agent/properties/${id}`);
-      
+
       const response = await fetch(`${API_BASE_URL}/agent/properties/${id}`, {
         method: 'GET',
         headers: {
@@ -112,7 +116,7 @@ export const propertiesAPI = {
           'ngrok-skip-browser-warning': 'true'
         },
       });
-      
+
       console.log('Single property response status:', response.status);
       await handleApiError(response);
       const result = await response.json();
@@ -126,28 +130,28 @@ export const propertiesAPI = {
       throw new Error('Failed to fetch property details');
     }
   },
-  
+
   createProperty: async (propertyData: PropertyDto, images: File[]): Promise<{ message: string; propertyId: number }> => {
     try {
       const formData = new FormData();
-      
+
       // Add all PropertyDto fields to FormData
       Object.entries(propertyData).forEach(([key, value]) => {
         if (value !== null && value !== undefined && value !== '') {
           formData.append(key, value.toString());
         }
       });
-      
+
       // Add images
       images.forEach((image) => {
         formData.append('images', image);
       });
-      
+
       const response = await fetch(`${API_BASE_URL}/agent/properties`, {
         method: 'POST',
         body: formData, // Don't set Content-Type header - browser will set it with boundary
       });
-      
+
       await handleApiError(response);
       return await response.json();
     } catch (error) {
@@ -157,7 +161,7 @@ export const propertiesAPI = {
       throw new Error('Failed to create property');
     }
   },
-  
+
   updateProperty: async (id: number, propertyData: PropertyDto, images?: File[], imagesToRemove?: number[]): Promise<{ message: string; propertyId: number }> => {
     try {
       const formData = new FormData();
@@ -224,6 +228,63 @@ export const propertiesAPI = {
       }
       throw new Error('Failed to update property status');
     }
+  },
+
+  saveAsDraft: async (propertyData: PropertyDto, images: File[]): Promise<{ message: string; propertyId: number }> => {
+    try {
+      const formData = new FormData();
+
+      // Add all PropertyDto fields to FormData
+      Object.entries(propertyData).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== '') {
+          formData.append(key, value.toString());
+        }
+      });
+
+      // Add images
+      images.forEach((image) => {
+        formData.append('images', image);
+      });
+
+      const response = await fetch(`${API_BASE_URL}/agent/properties/draft`, {
+        method: 'POST',
+        body: formData, // Don't set Content-Type header - browser will set it with boundary
+      });
+
+      await handleApiError(response);
+      return await response.json();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to save property as draft');
+    }
+  },
+
+  getDrafts: async (agentId: number): Promise<Property[]> => {
+    try {
+      console.log('Making drafts request to:', `${API_BASE_URL}/agent/properties/draft/${agentId}`);
+
+      const response = await fetch(`${API_BASE_URL}/agent/properties/draft/${agentId}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+      });
+
+      console.log('Drafts response status:', response.status);
+      await handleApiError(response);
+      const result = await response.json();
+      console.log('Drafts response:', result);
+      return result;
+    } catch (error) {
+      console.error('Drafts error:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to fetch drafts');
+    }
   }
 };
 
@@ -232,7 +293,7 @@ export const statsAPI = {
   getPropertyStats: async (agentId: number): Promise<PropertyStats> => {
     try {
       console.log('Making stats request to:', `${API_BASE_URL}/agent/properties/stats/${agentId}`);
-      
+
       const response = await fetch(`${API_BASE_URL}/agent/properties/stats/${agentId}`, {
         method: 'GET',
         headers: {
@@ -240,7 +301,7 @@ export const statsAPI = {
           'ngrok-skip-browser-warning': 'true'
         },
       });
-      
+
       console.log('Stats response status:', response.status);
       await handleApiError(response);
       const result = await response.json();
@@ -253,6 +314,110 @@ export const statsAPI = {
       }
       throw new Error('Failed to fetch property statistics');
     }
+  },
+
+  getDashboardStats: async (agentId: number): Promise<DashboardStats> => {
+    try {
+      console.log('Making dashboard stats request to:', `${API_BASE_URL}/agent/dashboard/stats/${agentId}`);
+
+      const response = await fetch(`${API_BASE_URL}/agent/dashboard/stats/${agentId}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+      });
+
+      console.log('Dashboard stats response status:', response.status);
+      await handleApiError(response);
+      const result = await response.json();
+      console.log('Dashboard stats response:', result);
+      return result;
+    } catch (error) {
+      console.error('Dashboard stats error:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to fetch dashboard statistics');
+    }
+  },
+
+  getPropertiesChart: async (agentId: number, period: string): Promise<{ labels: string[], data: number[] }> => {
+    try {
+      console.log('Making properties chart request to:', `${API_BASE_URL}/agent/dashboard/chart/properties/${agentId}?period=${period}`);
+
+      const response = await fetch(`${API_BASE_URL}/agent/dashboard/chart/properties/${agentId}?period=${period}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+      });
+
+      console.log('Properties chart response status:', response.status);
+      await handleApiError(response);
+      const result = await response.json();
+      console.log('Properties chart response:', result);
+      return result;
+    } catch (error) {
+      console.error('Properties chart error:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to fetch properties chart data');
+    }
+  },
+
+  getPropertiesSummary: async (agentId: number): Promise<PropertiesSummary> => {
+    try {
+      console.log('Making properties summary request to:', `${API_BASE_URL}/agent/dashboard/properties/summary/${agentId}`);
+
+      const response = await fetch(`${API_BASE_URL}/agent/dashboard/properties/summary/${agentId}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+      });
+
+      console.log('Properties summary response status:', response.status);
+      await handleApiError(response);
+      const result = await response.json();
+      console.log('Properties summary response:', result);
+      return result;
+    } catch (error) {
+      console.error('Properties summary error:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to fetch properties summary');
+    }
+  },
+
+  getPerformanceData: async (agentId: number): Promise<PerformanceData> => {
+    try {
+      console.log('Making performance data request to:', `${API_BASE_URL}/agent/dashboard/performance/${agentId}`);
+
+      const response = await fetch(`${API_BASE_URL}/agent/dashboard/performance/${agentId}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+      });
+
+      console.log('Performance data response status:', response.status);
+      await handleApiError(response);
+      const result = await response.json();
+      console.log('Performance data response:', result);
+      return result;
+    } catch (error) {
+      console.error('Performance data error:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to fetch performance data');
+    }
   }
 };
 
@@ -261,7 +426,7 @@ export const adminAPI = {
   getAllProperties: async (): Promise<Property[]> => {
     try {
       console.log('Making admin properties request to:', `${API_BASE_URL}/properties`);
-      
+
       const response = await fetch(`${API_BASE_URL}/properties`, {
         method: 'GET',
         headers: {
@@ -269,7 +434,7 @@ export const adminAPI = {
           'ngrok-skip-browser-warning': 'true'
         },
       });
-      
+
       console.log('Admin properties response status:', response.status);
       await handleApiError(response);
       const result = await response.json();
@@ -287,7 +452,7 @@ export const adminAPI = {
   getProperty: async (propertyId: number): Promise<Property> => {
     try {
       console.log('Making admin property request to:', `${API_BASE_URL}/properties/${propertyId}`);
-      
+
       const response = await fetch(`${API_BASE_URL}/properties/${propertyId}`, {
         method: 'GET',
         headers: {
@@ -295,7 +460,7 @@ export const adminAPI = {
           'ngrok-skip-browser-warning': 'true'
         },
       });
-      
+
       console.log('Admin property response status:', response.status);
       await handleApiError(response);
       const result = await response.json();
@@ -313,23 +478,23 @@ export const adminAPI = {
   updateProperty: async (propertyId: number, propertyData: PropertyDto, images?: File[]): Promise<{ message: string; propertyId: number }> => {
     try {
       console.log('Making admin property update request to:', `${API_BASE_URL}/properties/${propertyId}`);
-      
+
       const formData = new FormData();
-      
+
       // Add all PropertyDto fields to FormData
       Object.entries(propertyData).forEach(([key, value]) => {
         if (value !== null && value !== undefined && value !== '') {
           formData.append(key, value.toString());
         }
       });
-      
+
       // Add new images if provided
       if (images && images.length > 0) {
         images.forEach((image) => {
           formData.append('newImages', image);
         });
       }
-      
+
       const response = await fetch(`${API_BASE_URL}/properties/${propertyId}`, {
         method: 'PUT',
         headers: {
@@ -337,7 +502,7 @@ export const adminAPI = {
         },
         body: formData,
       });
-      
+
       console.log('Admin property update response status:', response.status);
       await handleApiError(response);
       const result = await response.json();
@@ -355,7 +520,7 @@ export const adminAPI = {
   deleteProperty: async (propertyId: number): Promise<{ message: string }> => {
     try {
       console.log('Making admin property delete request to:', `${API_BASE_URL}/properties/${propertyId}`);
-      
+
       const response = await fetch(`${API_BASE_URL}/properties/${propertyId}`, {
         method: 'DELETE',
         headers: {
@@ -363,7 +528,7 @@ export const adminAPI = {
           'ngrok-skip-browser-warning': 'true'
         },
       });
-      
+
       console.log('Admin property delete response status:', response.status);
       await handleApiError(response);
       const result = await response.json();

@@ -4,7 +4,7 @@ export interface Agent {
   fullName: string;
   email: string;
   phoneNumber: string;
-  status: 'ACTIVE' | 'INACTIVE';
+  status: 'ACTIVE' | 'INACTIVE' | 'SOLD' | 'DRAFT';
   createdAt: string;
   updatedAt: string;
   totalProperties?: number;
@@ -15,6 +15,19 @@ export interface PropertyStats {
   activeProperties: number;
   premiumProperties: number;
   featuredProperties: number;
+}
+
+export interface DashboardStats {
+  activeProperties: number;
+  inactiveProperties: number;
+  featuredProperties: number;
+  rentedProperties: number;
+  totalProperties: number;
+  underReviewProperties: number;
+  premiumProperties: number;
+  newInquiries: number;
+  totalInquiries: number;
+  soldProperties: number;
 }
 
 export interface LoginRequest {
@@ -46,6 +59,7 @@ export interface Property {
   propertyDescription: string;
   fullAddress: string;
   locality: string;
+  landmark?: string;
   city: string;
   state: string;
   pincode: string;
@@ -67,7 +81,7 @@ export interface Property {
   contactName: string;
   contactPhone: string;
   contactEmail?: string;
-  status: 'ACTIVE' | 'INACTIVE';
+  status: 'ACTIVE' | 'INACTIVE' | 'SOLD' | 'DRAFT';
   listingStatus: 'PREMIUM' | 'FEATURED' | 'RECENT';
   agent: {
     id: number;
@@ -96,6 +110,7 @@ export interface PropertyDto {
   propertyDescription: string;
   fullAddress: string;
   locality: string;
+  landmark?: string;
   city: string;
   state: string;
   pincode: string;
@@ -143,4 +158,24 @@ export interface Inquiry {
   userName?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PropertiesChartData {
+  label: string;
+  value: number;
+}
+
+export interface PropertiesSummary {
+  totalProperties: number;
+  statusBreakdown: {
+    [status: string]: number;
+  };
+}
+
+export interface PerformanceData {
+  totalProperties: number;
+  totalInquiries: number;
+  averageDaysToSell: string;
+  conversionRate: string;
+  soldProperties: number;
 }

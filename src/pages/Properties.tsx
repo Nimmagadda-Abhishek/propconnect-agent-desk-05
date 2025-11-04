@@ -28,8 +28,10 @@ export const Properties = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [properties, setProperties] = useState<Property[]>([]);
+  const [drafts, setDrafts] = useState<Property[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [draftsLoading, setDraftsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [typeFilter, setTypeFilter] = useState('ALL');
@@ -37,11 +39,22 @@ export const Properties = () => {
   useEffect(() => {
     const fetchProperties = async () => {
       if (!agent) return;
-      
+
       try {
-        const data = await propertiesAPI.getMyProperties(agent.id);
-        setProperties(data);
-        setFilteredProperties(data);
+        if (statusFilter === 'DRAFT') {
+          setDraftsLoading(true);
+          const draftsData = await propertiesAPI.getDrafts(agent.id);
+          // Handle both single object and array responses
+          const draftsArray = Array.isArray(draftsData) ? draftsData : [draftsData];
+          const draftsWithStatus = draftsArray.map(draft => ({ ...draft, status: 'DRAFT' as const }));
+          setDrafts(draftsWithStatus);
+          setProperties([]);
+        } else {
+          setIsLoading(true);
+          const propertiesData = await propertiesAPI.getMyProperties(agent.id);
+          setProperties(propertiesData);
+          setDrafts([]);
+        }
       } catch (error) {
         toast({
           title: 'Error',
@@ -50,14 +63,16 @@ export const Properties = () => {
         });
       } finally {
         setIsLoading(false);
+        setDraftsLoading(false);
       }
     };
 
     fetchProperties();
-  }, [agent, toast]);
+  }, [agent, toast, statusFilter]);
 
   useEffect(() => {
-    let filtered = properties;
+    const allProperties = statusFilter === 'DRAFT' ? drafts : properties;
+    let filtered = allProperties;
 
     if (searchTerm) {
       filtered = filtered.filter(property =>
@@ -65,7 +80,7 @@ export const Properties = () => {
       );
     }
 
-    if (statusFilter !== 'ALL') {
+    if (statusFilter !== 'ALL' && statusFilter !== 'DRAFT') {
       filtered = filtered.filter(property => property.status === statusFilter);
     }
 
@@ -74,12 +89,14 @@ export const Properties = () => {
     }
 
     setFilteredProperties(filtered);
-  }, [searchTerm, statusFilter, typeFilter, properties]);
+  }, [searchTerm, statusFilter, typeFilter, properties, drafts]);
+
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'ACTIVE': return 'default';
       case 'INACTIVE': return 'secondary';
+      case 'DRAFT': return 'secondary';
       default: return 'outline';
     }
   };
@@ -102,13 +119,15 @@ export const Properties = () => {
     return `₹${price.toLocaleString()}`;
   };
 
-  if (isLoading) {
+  if (isLoading || draftsLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Loading properties...</p>
+            <p className="mt-2 text-muted-foreground">
+              {draftsLoading ? 'Loading drafts...' : 'Loading properties...'}
+            </p>
           </div>
         </div>
       </Layout>
@@ -162,6 +181,7 @@ export const Properties = () => {
                     <SelectItem value="ALL">All Status</SelectItem>
                     <SelectItem value="ACTIVE">Active</SelectItem>
                     <SelectItem value="INACTIVE">Inactive</SelectItem>
+                    <SelectItem value="DRAFT">Draft</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -192,9 +212,13 @@ export const Properties = () => {
               <div className="text-center">
                 <h3 className="text-lg font-medium text-foreground mb-2">No properties found</h3>
                 <p className="text-muted-foreground mb-4">
-                  {properties.length === 0 
-                    ? "Start by adding your first property listing" 
-                    : "Try adjusting your search filters"}
+                  {statusFilter === 'DRAFT'
+                    ? drafts.length === 0
+                      ? "No draft properties found"
+                      : "Try adjusting your search filters"
+                    : properties.length === 0
+                      ? "Start by adding your first property listing"
+                      : "Try adjusting your search filters"}
                 </p>
                 <Button onClick={() => navigate('/properties/new')}>
                   <Plus className="h-4 w-4 mr-2" />
